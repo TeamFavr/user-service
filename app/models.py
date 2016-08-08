@@ -9,12 +9,10 @@ class User(db.Model):
     last_name = db.Column(db.String(120))
     email = db.Column(db.String(120), unique=True)
     password = db.Column(db.LargeBinary())
-    is_active = db.Column(db.Boolean(), default=True)
-    username = db.Column(db.String(120), unique=True)
+    is_ad_free = db.Column(db.Boolean(), default=False)
 
-    def __init__(self, first_name, last_name, email, password, is_active=True):
+    def __init__(self, first_name, last_name, email, password):
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
         self.password = generate_password_hash(password)
-        self.is_active = is_active
