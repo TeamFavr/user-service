@@ -16,3 +16,12 @@ class User(db.Model):
         self.last_name = last_name
         self.email = email
         self.password = generate_password_hash(password)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'email': self.email,
+            'is_ad_free': self.is_ad_free
+        }
