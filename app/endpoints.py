@@ -152,7 +152,24 @@ def create_friend_request():
         return jsonify({'success': True})
 
 
-@user.route("/friend-request/<int:id>", methods=["GET", "PATCH", "DELETE"])
-def get_friend_request_with_id():
+@user.route("/friendship/<int:id>", methods=["GET", "PATCH", "DELETE"])
+def get_friend_request_with_id(id):
     """Get, update or delete friendship with the specified id."""
-    pass
+    if request.method == "GET":
+        # Get friend request
+        friendship = Friendship.query.get(id)
+        if friendship is None:
+            raise CustomError(
+                404,
+                message="Friendship with id: {} not found.".format(id)
+            )
+        can_view = friendship.actioning_user_id == g.user.id or \
+            friendship.recieving_user_id == g.user.id
+        # Check user is has permission to view that request
+        if not can_view:
+            raise CustomError(
+                401,
+                message="You are not authorised to view this resource."
+            )
+
+        return jsonify({'success': True, 'friendship': friendship.to_dict()})
