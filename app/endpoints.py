@@ -65,8 +65,6 @@ def signup():
 def get_user_by_id(id):
     user = User.query.get(id)
     if user is None:
-        return {
-            'success': False,
-            'message': 'User with id: {} was not found.'.format(id)
-        }
+        raise CustomError(404, 'User with id: {} was not found.'.format(id))
+
     return jsonify({'success': True, 'user': user.to_dict()})
