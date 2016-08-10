@@ -36,7 +36,7 @@ class User(db.Model):
         friendships = Friendship.query.filter(
             Friendship.actioning_user_id == self.id or
             Friendship.recieving_user_id == self.id,
-            Friendship.confirmed is True
+            Friendship.confirmed == True # noqa
         )
 
         user_ids = set()
@@ -50,12 +50,13 @@ class User(db.Model):
 
     def get_friend_requests(self):
         """Return all Friendship objects which the User has not accepted."""
+        print("My id: {}".format(self.id))
         friend_requests = Friendship.query.filter(
             Friendship.recieving_user_id == self.id,
-            Friendship.confirmed is False
+            Friendship.confirmed == False # noqa
         )
 
-        return friend_requests
+        return friend_requests.all()
 
 
 class Friendship(db.Model):
@@ -75,3 +76,14 @@ class Friendship(db.Model):
         self.actioning_user_id = actioning_user.id
         self.recieving_user_id = recieving_user.id
         self.confirmed = confirmed
+
+    def to_dict(self):
+        """Return dictionary representing instance."""
+        return {
+            'id': self.id,
+            'actioning_user': User.query.get(
+                self.actioning_user_id).to_dict(),
+            'recieving_user': User.query.get(
+                self.recieving_user_id).to_dict(),
+            'confirmed': self.confirmed
+        }

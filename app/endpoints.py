@@ -105,7 +105,8 @@ def create_friend_request():
     Or return all friendships which are not confirmed for the current user.
     """
     if request.method == "GET":
-        return 'Friend requests'
+        friend_requests = [f.to_dict() for f in g.user.get_friend_requests()]
+        return jsonify({'success': True, 'friend_requests': friend_requests})
 
     if request.method == "POST":
         # Get recieving user id from request
