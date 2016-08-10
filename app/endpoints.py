@@ -4,11 +4,13 @@ from flask import Blueprint, jsonify, request, g
 from flask_bcrypt import check_password_hash
 
 from .exceptions import CustomError
-from .models import db, User
+from .models import db, User, Friendship
 
 user = Blueprint('user', __name__)
 
+
 def before_request():
+    """Run setup before each request."""
     id = request.headers.get("User-Id", None)
     if id:
         user = User.query.get(id)
@@ -94,16 +96,59 @@ def friends():
     return jsonify({'success': True, 'friends': friends})
 
 
-@user.route("/friend-requests")
-def friend_requests():
-    """Return all friendships which are not confirmed for the current user."""
-    pass
-
-
-@user.route("/friend-request", methods=["POST"])
+@user.route("/friend-requests", methods=["GET", "POST"])
 def create_friend_request():
-    """Create an unconfirmed friendship between two users."""
-    pass
+    """
+    List or create friendrequests.
+
+    Create an unconfirmed friendship between two users.
+    Or return all friendships which are not confirmed for the current user.
+    """
+    if request.method == "GET":
+        return 'Friend requests'
+
+    if request.method == "POST":
+        # Get recieving user id from request
+        json = request.get_json()
+        if json is None:
+            raise CustomError(400, message="No JSON included or Content-Type"
+                                           "is not application/json")
+
+        if 'recieving_user_id' not in json:
+            raise CustomError(400, message="Must include recieving_user_id")
+
+        recieving_user_id = json['recieving_user_id']
+
+        # Get the user object
+        recieving_user = User.query.get(recieving_user_id)
+        if recieving_user is None:
+            raise CustomError(
+                404,
+                message='User with id: {} was not found.'.format(
+                    recieving_user_id)
+            )
+
+        # Check friendship does not already exist
+        friendship_exists = Friendship.query.filter(
+            (Friendship.actioning_user_id == g.user.id) |
+            (Friendship.recieving_user_id == g.user.id),
+            (Friendship.actioning_user_id == recieving_user_id) |
+            (Friendship.recieving_user_id == recieving_user_id)
+        ).first()
+
+        if friendship_exists:
+            raise CustomError(
+                409,
+                message="There is either a pending friend request between the"
+                "two users or the two users are already friends."
+            )
+
+        # Insert friend request
+        friend_request = Friendship(g.user, recieving_user)
+        db.session.add(friend_request)
+        db.session.commit()
+
+        return jsonify({'success': True})
 
 
 @user.route("/friend-request/<int:id>", methods=["GET", "PATCH", "DELETE"])
