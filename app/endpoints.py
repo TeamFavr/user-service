@@ -155,21 +155,43 @@ def create_friend_request():
 @user.route("/friendship/<int:id>", methods=["GET", "PATCH", "DELETE"])
 def get_friend_request_with_id(id):
     """Get, update or delete friendship with the specified id."""
+    # Get friend request
+    friendship = Friendship.query.get(id)
+    if friendship is None:
+        raise CustomError(
+            404,
+            message="Friendship with id: {} not found.".format(id)
+        )
+    can_view = friendship.actioning_user_id == g.user.id or \
+        friendship.recieving_user_id == g.user.id
+    # Check user is has permission to view that request
+    if not can_view:
+        raise CustomError(
+            401,
+            message="You are not authorised to view this resource."
+        )
+
     if request.method == "GET":
-        # Get friend request
-        friendship = Friendship.query.get(id)
-        if friendship is None:
-            raise CustomError(
-                404,
-                message="Friendship with id: {} not found.".format(id)
-            )
-        can_view = friendship.actioning_user_id == g.user.id or \
-            friendship.recieving_user_id == g.user.id
-        # Check user is has permission to view that request
-        if not can_view:
+        return jsonify({'success': True, 'friendship': friendship.to_dict()})
+
+    if request.method == "PATCH":
+        if friendship.recieving_user_id != g.user.id:
             raise CustomError(
                 401,
-                message="You are not authorised to view this resource."
+                message="You are not authorised to update this object."
             )
 
+        json = request.get_json()
+        if json is None:
+            raise CustomError(400, message="No JSON included or Content-Type"
+                                           "is not application/json")
+        if 'confirmed' in json:
+            friendship.confirmed = json['confirmed']
+
+        db.session.commit()
         return jsonify({'success': True, 'friendship': friendship.to_dict()})
+
+    if request.method == "DELETE":
+        db.session.delete(friendship)
+        db.session.commit()
+        return jsonify({'success': True})
