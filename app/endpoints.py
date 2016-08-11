@@ -48,7 +48,7 @@ def authenticate():
     if not check_password_hash(user.password, json['password']):
         raise CustomError(401, message='Email or password were not found.')
 
-    return jsonify({'success': True, 'user': user.to_dict()})
+    return jsonify({'success': True, 'user': user.to_dict()}), 201
 
 
 @user.route("/signup", methods=["POST"])
@@ -76,7 +76,7 @@ def signup():
     db.session.add(user)
     db.session.commit()
 
-    return jsonify({'success': True, 'user': user.to_dict()})
+    return jsonify({'success': True, 'user': user.to_dict()}), 201
 
 
 @user.route("/users/<int:id>")
@@ -149,7 +149,7 @@ def create_friend_request():
         db.session.add(friend_request)
         db.session.commit()
 
-        return jsonify({'success': True})
+        return jsonify({'success': True}), 201
 
 
 @user.route("/friendship/<int:id>", methods=["GET", "PATCH", "DELETE"])
